@@ -10,6 +10,8 @@ Think about how to handle multiple nodes connected together (nets between more t
     maybe look for euler/hamilton paths circuits first
 """
 
+MIN_RUNS = 100
+
 E = [
     ["N1", "N2", 1],
     ["N2", "N4", 1],
@@ -127,14 +129,13 @@ def minCutAlgo(edge_list, node_dict):
 
     # get cut weight
     best_cut_weight = getCutWeight(edge_list, node_dict_1, node_dict_2)
-    # print("Initial cut weight: " + str(best_cut_weight))
-    swapped = True
+    best_dicts = [node_dict_1, node_dict_2]
+    runs = 0
 
-    while(swapped):
+    while(runs<MIN_RUNS):
+        runs+=1
         # check initial cut cut_weight
         if (best_cut_weight == 0):
-            swapped=False
-            res = [minCutAlgo(edge_list, node_dict_1), minCutAlgo(edge_list,node_dict_2)]
             break
         
         # pick random nodes
@@ -149,23 +150,18 @@ def minCutAlgo(edge_list, node_dict):
         cut_weight = getCutWeight(edge_list, node_dict_1, node_dict_2)
 
         # compare, swap with probability (if worse)
-        if (cut_weight == 0):
+        if (cut_weight < best_cut_weight):
             best_cut_weight = cut_weight
-            swapped = False
-            res = [minCutAlgo(edge_list, node_dict_1), minCutAlgo(edge_list,node_dict_2)]
-        elif (cut_weight < best_cut_weight):
-            best_cut_weight = cut_weight
+            best_dicts = [node_dict_1, node_dict_2]
         elif (~randomProb()):
-            swapped = False
             node_dict_1.pop(node2)
             node_dict_2.pop(node1)
             node_dict_1[node1] = node1
             node_dict_2[node2] = node2
-            res = [minCutAlgo(edge_list, node_dict_1), minCutAlgo(edge_list,node_dict_2)]
 
-    print("Best cut weight: " + str(best_cut_weight))
-    print(res)
+    res = [minCutAlgo(edge_list, best_dicts[0]), minCutAlgo(edge_list, best_dicts[1])]
 
+    # print("Best cut weight: " + str(best_cut_weight))
     return res
 
 nested_node_list = minCutAlgo(E, createNodeDict(E))
