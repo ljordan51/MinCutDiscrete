@@ -1,5 +1,8 @@
 import random
 import math
+import networkx as nx
+import matplotlib.pyplot as plt
+import numpy as np
 
 """
 Notes:
@@ -11,8 +14,8 @@ E = [
     ["N1", "N2", 1],
     ["N2", "N4", 1],
     ["N4", "N5", 1],
-    ["N3", "N12", 10],
-    ["N6", "N15", 10],
+    ["N3", "N12", 1],
+    ["N6", "N15", 1],
     ["N101", "N201", 1],
     ["N102", "N202", 1],
     ["N103", "N203", 1],
@@ -21,8 +24,64 @@ E = [
     ["N106", "N206", 1],
     ["N107", "N207", 1],
     ["N108", "N208", 1],
-    ["N109", "N205", 1]
+    ["N1", "N101", 1],
+    ["N1", "N202", 1],
+    ["N105", "N2", 1],
+    ["N103", "N4", 1],
+    ["N109", "N5", 1],
+    ["N1", "N12", 1],
+    ["N101", "N15", 1],
+    ["N101", "N205", 1],
+    ["N102", "N208", 1],
+    ["N103", "N207", 1],
+    ["N104", "N206", 1],
+    ["N105", "N101", 1],
+    ["N106", "N109", 1],
+    ["N107", "N102", 1],
+    ["N108", "N107", 1],
+    ["N109", "N208", 1]
 ]
+
+def createNxGraph(edge_list):
+    G = nx.Graph()
+    edge_tuples = [(edge[0], edge[1]) for edge in edge_list]
+    G.add_edges_from(edge_tuples)
+    return G
+    
+
+def createPosFromNestedNodeList(node_list, num_nodes, orientation=True, center=[0,0], step=0):
+    res = {}
+    spacing = [0.4, 0.4, 0.2, 0.2]
+    
+    if (node_list[-1]=="end"):
+        for i in range(len(node_list)-1):
+            if orientation:
+                res[node_list[i]] = np.array([center[0]+i*0.2-0.1, center[1]])
+            else:
+                res[node_list[i]] = np.array([center[0], center[1]+i*0.2-0.1])
+    else:
+        if orientation:
+            d1 = createPosFromNestedNodeList(node_list[0], num_nodes, False, [center[0]+spacing[step], center[1]], step+1)
+            d2 = createPosFromNestedNodeList(node_list[1], num_nodes, False, [center[0]-spacing[step], center[1]], step+1)
+            d1.update(d2)
+            res = d1
+        else:
+            d1 = createPosFromNestedNodeList(node_list[0], num_nodes, True, [center[0], center[1]+spacing[step]], step+1)
+            d2 = createPosFromNestedNodeList(node_list[1], num_nodes, True, [center[0], center[1]-spacing[step]], step+1)
+            d1.update(d2)
+            res = d1
+    return res
+
+
+def drawGraph(graph, nested_node_list):
+    # pos = nx.circular_layout(graph)
+    pos = createPosFromNestedNodeList(nested_node_list, len(graph.nodes))
+    print("Pos: ")
+    print(pos)
+    # values = [colors.get(node, 'blue') for node in graph.nodes()]
+    # nx.draw(graph, pos, with_labels = False, node_color=values, edge_color='black', width=1, alpha=0.7)
+    nx.draw(graph, pos=pos, with_labels=True, edge_color='black', width=1, alpha=0.7)
+
 
 def createNodeDict(edge_list):
     dict = {}
@@ -53,28 +112,31 @@ def getCutWeight(edge_list, node_dict_1, node_dict_2):
 
 
 def randomProb():
-    probability = .1
+    probability = .05
     range_size = math.ceil(1/probability)
     rand_int = random.randint(1, range_size)
-    print(range_size)
-    print(rand_int)
-    print(rand_int/range_size)
-    return (rand_int/range_size >= 0.5)
+    return (rand_int == range_size)
 
 
 def minCutAlgo(edge_list, node_dict):
     # handle recursive base case
+    if (len(node_dict) <= 2):
+        return list(node_dict.keys()) + ["end"]
 
-    node_dict_1, node_dict_2 = randomSplit(node_dict)# randomly separate into two groups
-    print(node_dict_1)
-    print(node_dict_2)
+    node_dict_1, node_dict_2 = randomSplit(node_dict) # randomly separate into two groups
 
     # get cut weight
     best_cut_weight = getCutWeight(edge_list, node_dict_1, node_dict_2)
-    print(best_cut_weight)
+    # print("Initial cut weight: " + str(best_cut_weight))
     swapped = True
 
     while(swapped):
+        # check initial cut cut_weight
+        if (best_cut_weight == 0):
+            swapped=False
+            res = [minCutAlgo(edge_list, node_dict_1), minCutAlgo(edge_list,node_dict_2)]
+            break
+        
         # pick random nodes
         node1 = node_dict_1.pop(random.choice(list(node_dict_1.keys())))
         node2 = node_dict_2.pop(random.choice(list(node_dict_2.keys())))
@@ -89,11 +151,11 @@ def minCutAlgo(edge_list, node_dict):
         # compare, swap with probability (if worse)
         if (cut_weight == 0):
             best_cut_weight = cut_weight
+            swapped = False
+            res = [minCutAlgo(edge_list, node_dict_1), minCutAlgo(edge_list,node_dict_2)]
         elif (cut_weight < best_cut_weight):
             best_cut_weight = cut_weight
-        elif (randomProb()):
-            best_cut_weight = cut_weight
-        else:
+        elif (~randomProb()):
             swapped = False
             node_dict_1.pop(node2)
             node_dict_2.pop(node1)
@@ -101,9 +163,13 @@ def minCutAlgo(edge_list, node_dict):
             node_dict_2[node2] = node2
             res = [minCutAlgo(edge_list, node_dict_1), minCutAlgo(edge_list,node_dict_2)]
 
-        print(best_cut_weight)
+    print("Best cut weight: " + str(best_cut_weight))
+    print(res)
 
     return res
 
-
-print(minCutAlgo(E, createNodeDict(E)))
+nested_node_list = minCutAlgo(E, createNodeDict(E))
+print(nested_node_list)
+G = createNxGraph(E)
+drawGraph(G, nested_node_list)
+plt.show()
