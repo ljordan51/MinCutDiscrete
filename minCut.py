@@ -10,7 +10,7 @@ Think about how to handle multiple nodes connected together (nets between more t
     maybe look for euler/hamilton paths circuits first
 """
 
-MIN_RUNS = 100
+MIN_RUNS = 1000
 
 E = [
     ["N1", "N2", 1],
@@ -41,7 +41,35 @@ E = [
     ["N106", "N109", 1],
     ["N107", "N102", 1],
     ["N108", "N107", 1],
-    ["N109", "N208", 1]
+    ["N1", "N20", 1],
+    ["N2", "N40", 1],
+    ["N4", "N50", 1],
+    ["N3", "N120", 1],
+    ["N6", "N150", 1],
+    ["N101", "N2010", 1],
+    ["N102", "N2020", 1],
+    ["N103", "N2030", 1],
+    ["N104", "N2040", 1],
+    ["N105", "N2050", 1],
+    ["N106", "N2060", 1],
+    ["N107", "N2070", 1],
+    ["N108", "N2080", 1],
+    ["N1", "N1010", 1],
+    ["N1", "N2020", 1],
+    ["N105", "N20", 1],
+    ["N103", "N40", 1],
+    ["N109", "N50", 1],
+    ["N1", "N120", 1],
+    ["N101", "N150", 1],
+    ["N101", "N2050", 1],
+    ["N102", "N2080", 1],
+    ["N103", "N2070", 1],
+    ["N104", "N2060", 1],
+    ["N105", "N1010", 1],
+    ["N106", "N1090", 1],
+    ["N107", "N1020", 1],
+    ["N108", "N1070", 1],
+    ["N109", "N2080", 1]
 ]
 
 def createNxGraph(edge_list):
@@ -53,7 +81,11 @@ def createNxGraph(edge_list):
 
 def createPosFromNestedNodeList(node_list, num_nodes, orientation=True, center=[0,0], step=0):
     res = {}
-    spacing = [0.4, 0.4, 0.2, 0.2]
+    depth = math.ceil(math.log(num_nodes, 2))
+    spacing = []
+    for i in range(depth):
+        padding = (2**math.floor(i/2))*0.2
+        spacing = [padding] + spacing
     
     if (node_list[-1]=="end"):
         for i in range(len(node_list)-1):
@@ -76,12 +108,7 @@ def createPosFromNestedNodeList(node_list, num_nodes, orientation=True, center=[
 
 
 def drawGraph(graph, nested_node_list):
-    # pos = nx.circular_layout(graph)
     pos = createPosFromNestedNodeList(nested_node_list, len(graph.nodes))
-    print("Pos: ")
-    print(pos)
-    # values = [colors.get(node, 'blue') for node in graph.nodes()]
-    # nx.draw(graph, pos, with_labels = False, node_color=values, edge_color='black', width=1, alpha=0.7)
     nx.draw(graph, pos=pos, with_labels=True, edge_color='black', width=1, alpha=0.7)
 
 
@@ -164,8 +191,8 @@ def minCutAlgo(edge_list, node_dict):
     # print("Best cut weight: " + str(best_cut_weight))
     return res
 
+
 nested_node_list = minCutAlgo(E, createNodeDict(E))
-print(nested_node_list)
 G = createNxGraph(E)
 drawGraph(G, nested_node_list)
 plt.show()
