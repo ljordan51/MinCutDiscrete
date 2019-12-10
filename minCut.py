@@ -10,7 +10,7 @@ Think about how to handle multiple nodes connected together (nets between more t
     maybe look for euler/hamilton paths circuits first
 """
 
-MIN_RUNS = 1000
+MIN_RUNS = 5000
 
 E = [
     ["N1", "N2", 1],
@@ -192,7 +192,9 @@ def minCutAlgo(edge_list, node_dict):
     return res
 
 
-nested_node_list = minCutAlgo(E, createNodeDict(E))
+node_dict = createNodeDict(E)
+print(len(node_dict))
+nested_node_list = minCutAlgo(E, node_dict)
 G = createNxGraph(E)
 drawGraph(G, nested_node_list)
 plt.show()
